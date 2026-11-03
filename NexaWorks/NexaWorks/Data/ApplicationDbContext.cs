@@ -67,6 +67,9 @@ namespace NexaWorks.Data
 
                 entity.Property(pv => pv.VersionNumber)
                     .IsRequired();
+
+                entity.Property(pv => pv.ProductId)
+                    .IsRequired();
             });
 
             modelBuilder.Entity<ProductVersionOs>(entity =>
@@ -75,6 +78,12 @@ namespace NexaWorks.Data
                     .WithOne(t => t.ProductVersionOs)
                     .HasForeignKey(t => t.ProductVersionOsId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(pv => pv.ProductVersionId)
+                    .IsRequired();
+
+                entity.Property(pv => pv.OsId)
+                    .IsRequired();
             });
 
             modelBuilder.Entity<Os>(entity =>
@@ -82,6 +91,9 @@ namespace NexaWorks.Data
                 entity.HasMany(os => os.ProductVersionOs)
                     .WithOne(pvo => pvo.Os)
                     .HasForeignKey(pvo => pvo.OsId);
+
+                entity.Property(pv => pv.Name)
+                    .IsRequired();
             });
         }
     }
