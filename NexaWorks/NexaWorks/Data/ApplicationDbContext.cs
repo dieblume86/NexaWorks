@@ -11,10 +11,13 @@ namespace NexaWorks.Data
         {
         }
 
-        public DbSet<Ticket> Tickets { get; set; }
+
         public DbSet<Os> Os { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<ProductVersion> ProductVersions { get; set; }
+        public DbSet<ProductVersionOs> ProductVersionOs { get; set; }
+        public DbSet<Ticket> Tickets { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -28,23 +31,18 @@ namespace NexaWorks.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Ticket>(entity =>
+            modelBuilder.Entity<Os>(entity =>
             {
-                entity.HasOne(t => t.ProductVersionOs)
-                       .WithMany(pos => pos.Tickets)
-                       .HasForeignKey(t => t.ProductVersionOsId);
+                entity.HasMany(os => os.ProductVersionOs)
+                    .WithOne(pvo => pvo.Os)
+                    .HasForeignKey(pvo => pvo.OsId)
+                    .OnDelete(DeleteBehavior.Cascade);
 
-                entity.Property(t => t.Issue)
+                entity.Property(pv => pv.Name)
                     .IsRequired();
 
-                entity.Property(t => t.Resolution)
-                    .IsRequired(false);
-
-                entity.Property(t => t.Status)
-                    .HasConversion<int>();
-
-                entity.HasIndex(t => t.Status);
-                entity.HasIndex(t => t.CreationDate);
+                entity.HasIndex(os => os.Name)
+                    .IsUnique();
             });
 
             modelBuilder.Entity<Product>(entity =>
@@ -56,6 +54,9 @@ namespace NexaWorks.Data
 
                 entity.Property(p => p.Name)
                     .IsRequired();
+
+                entity.HasIndex(p => p.Name)
+                    .IsUnique();
             });
 
             modelBuilder.Entity<ProductVersion>(entity =>
@@ -70,6 +71,13 @@ namespace NexaWorks.Data
 
                 entity.Property(pv => pv.ProductId)
                     .IsRequired();
+
+                entity.HasIndex(v => new
+                {
+                    v.ProductId,
+                    v.VersionNumber
+                })
+                .IsUnique();
             });
 
             modelBuilder.Entity<ProductVersionOs>(entity =>
@@ -84,16 +92,35 @@ namespace NexaWorks.Data
 
                 entity.Property(pv => pv.OsId)
                     .IsRequired();
+
+                entity.HasIndex(pos => new
+                {
+                    pos.ProductVersionId,
+                    pos.OsId
+                })
+                .IsUnique();
             });
 
-            modelBuilder.Entity<Os>(entity =>
+            modelBuilder.Entity<Ticket>(entity =>
             {
-                entity.HasMany(os => os.ProductVersionOs)
-                    .WithOne(pvo => pvo.Os)
-                    .HasForeignKey(pvo => pvo.OsId);
+                entity.HasOne(t => t.ProductVersionOs)
+                       .WithMany(pos => pos.Tickets)
+                       .HasForeignKey(t => t.ProductVersionOsId);
 
-                entity.Property(pv => pv.Name)
+                entity.Property(t => t.Issue)
                     .IsRequired();
+
+                entity.Property(t => t.CreationDate)
+                    .IsRequired();
+
+                entity.Property(t => t.Resolution)
+                    .IsRequired(false);
+
+                entity.Property(t => t.Status)
+                    .HasConversion<int>();
+
+                entity.HasIndex(t => t.Status);
+                entity.HasIndex(t => t.CreationDate);
             });
         }
     }
