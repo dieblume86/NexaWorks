@@ -27,6 +27,7 @@ public static class SeedData
         InitOs(context);
         InitProducts(context);
         InitProductVersions(context);
+        InitTickets(context);
     }
 
     private static void InitOs(ApplicationDbContext context)
@@ -102,7 +103,51 @@ public static class SeedData
         }
     }
 
-    public static void Reset(ApplicationDbContext context)
+    private static void InitTickets(ApplicationDbContext context)
+    {
+        Ticket1(context);
+        Ticket2(context);
+
+        context.SaveChanges();
+    }
+    private static void AddTicket(string poductName,
+        string versionNumber,
+        string osName,
+        DateTimeOffset creationDate,
+        DateTimeOffset resolutionDate,
+        string issue,
+        string resolution,
+        ApplicationDbContext context)
+    {
+        var product = context.Products.FirstOrDefault(p => p.Name == poductName);
+        var productVersion = context.ProductVersions.FirstOrDefault(pv => pv.ProductId == product.Id && pv.VersionNumber == versionNumber);
+        var os = context.Os.FirstOrDefault(o => o.Name == osName);
+
+        var productVersionOs = GetProductVersionOs(productVersion, os, context);
+
+        if (productVersionOs == null)
+        {
+            context.ProductVersionOs.Add(new ProductVersionOs { ProductVersionId = productVersion.Id, OsId = os.Id });
+            context.SaveChanges();
+            productVersionOs = GetProductVersionOs(productVersion, os, context);
+        }
+
+        context.Tickets.Add(new Ticket
+        {
+            ProductVersionOs = productVersionOs,
+            CreationDate = creationDate,
+            ResolutionDate = resolutionDate,
+            Issue = issue,
+            Resolution = resolution,
+            Status = string.IsNullOrEmpty(resolution) ? Models.Enums.ETicketStatus.InProgress : Models.Enums.ETicketStatus.Resolved
+        });
+    }
+    private static ProductVersionOs GetProductVersionOs(ProductVersion productVersion, Os os, ApplicationDbContext context)
+    {
+        return context.ProductVersionOs.FirstOrDefault(pvo => pvo.ProductVersionId == productVersion.Id && pvo.OsId == os.Id);
+    }
+
+    private static void Reset(ApplicationDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
@@ -126,5 +171,33 @@ public static class SeedData
 
         // The SQL commands bypass the EF Core change tracker.
         context.ChangeTracker.Clear();
+    }
+
+
+    private static void Ticket1(ApplicationDbContext context)
+    {
+        AddTicket(
+           productTrader,
+           "1.2",
+           android,
+           new DateTimeOffset(2025, 1, 12, 10, 30, 0, TimeSpan.Zero),
+           new DateTimeOffset(2025, 1, 15, 14, 45, 0, TimeSpan.Zero),
+           "L’utilisateur indique que le solde de son portefeuille ne se met pas à jour immédiatement après la vente d’actions. Le montant affiché reste celui d’avant la vente jusqu’à ce qu’il ferme puis rouvre l’application.",
+           "L’équipe de développement a identifié un problème de rafraîchissement des données après la confirmation d’une transaction. Une mise à jour du portefeuille a été ajoutée après chaque vente réussie. Des tests ont confirmé que le nouveau solde s’affiche désormais sans redémarrer l’application",
+           context
+       );
+    }
+    private static void Ticket2(ApplicationDbContext context)
+    {
+        AddTicket(
+           productMaster,
+           "2.1",
+           android,
+           new DateTimeOffset(2025, 1, 18, 10, 30, 0, TimeSpan.Zero),
+           new DateTimeOffset(),
+            "L’utilisateur signale que le graphique de répartition de ses investissements affiche des pourcentages dont la somme dépasse 100 %. Le problème apparaît après l’ajout de plusieurs nouveaux placements, alors que les montants individuels semblent corrects.",
+            "",
+            context
+       );
     }
 }
