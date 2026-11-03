@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore;
 using NexaWorks.Models.Entities;
 
 namespace NexaWorks.Data;
@@ -19,6 +20,8 @@ public static class SeedData
 
     public static void Initialize(ApplicationDbContext context)
     {
+        Reset(context);
+
         ArgumentNullException.ThrowIfNull(context);
 
         InitOs(context);
@@ -97,5 +100,31 @@ public static class SeedData
         {
             context.ProductVersions.Add(new ProductVersion { VersionNumber = version, ProductId = productId });
         }
+    }
+
+    public static void Reset(ApplicationDbContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        using var transaction = context.Database.BeginTransaction();
+
+        //First remove Tickets because they depend on ProductVersionOs, which in turn depends on ProductVersions and Os.
+        context.Database.ExecuteSqlRaw("DELETE FROM [dbo].[Tickets]");
+        context.Database.ExecuteSqlRaw("DELETE FROM [dbo].[ProductVersionOs]");
+        context.Database.ExecuteSqlRaw("DELETE FROM [dbo].[ProductVersions]");
+        context.Database.ExecuteSqlRaw("DELETE FROM [dbo].[Products]");
+        context.Database.ExecuteSqlRaw("DELETE FROM [dbo].[Os]");
+
+        // Reset the identity columns to 0 for each table. This ensures that the next inserted record will have an ID of 1.
+        context.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('[dbo].[Tickets]', RESEED, 0)");
+        context.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('[dbo].[ProductVersionOs]', RESEED, 0)");
+        context.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('[dbo].[ProductVersions]', RESEED, 0)");
+        context.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('[dbo].[Products]', RESEED, 0)");
+        context.Database.ExecuteSqlRaw("DBCC CHECKIDENT ('[dbo].[Os]', RESEED, 0)");
+
+        transaction.Commit();
+
+        // The SQL commands bypass the EF Core change tracker.
+        context.ChangeTracker.Clear();
     }
 }
