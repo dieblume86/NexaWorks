@@ -113,8 +113,17 @@ namespace NexaWorks.Data
                 entity.Property(t => t.CreationDate)
                     .IsRequired();
 
+                entity.Property(t => t.ResolutionDate)
+                    .IsRequired(false);
+
+                entity.Property(t => t.Issue)
+                    .IsRequired();
+
                 entity.Property(t => t.Resolution)
                     .IsRequired(false);
+
+                entity.Property(t => t.ProductVersionOsId)
+                 .IsRequired();
 
                 entity.Property(t => t.Status)
                     .HasConversion<int>();
