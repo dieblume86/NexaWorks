@@ -114,9 +114,9 @@ public static class SeedData
         string versionNumber,
         string osName,
         DateTimeOffset creationDate,
-        DateTimeOffset resolutionDate,
+        DateTimeOffset? resolutionDate,
         string issue,
-        string resolution,
+        string? resolution,
         ApplicationDbContext context)
     {
         var product = context.Products.FirstOrDefault(p => p.Name == poductName);
@@ -194,9 +194,9 @@ public static class SeedData
            "2.1",
            android,
            new DateTimeOffset(2025, 1, 18, 10, 30, 0, TimeSpan.Zero),
-           new DateTimeOffset(),
+           null,
             "L’utilisateur signale que le graphique de répartition de ses investissements affiche des pourcentages dont la somme dépasse 100 %. Le problème apparaît après l’ajout de plusieurs nouveaux placements, alors que les montants individuels semblent corrects.",
-            "",
+            null,
             context
        );
     }
